@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Gear Calculator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: #181818;
+    color: white;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 20px;
+}
+
+.panel {
+    background: #252525;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    margin-top: 12px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background: #333;
+    color: white;
+    font-size: 16px;
+}
+
+.stats {
+    margin-top: 15px;
+    background: #111;
+    border-radius: 8px;
+    padding: 12px;
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+svg {
+    background: #111;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+}
+
+.stat-title {
+    color: #4caf50;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+@media (max-width: 800px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Gear Calculator</h1>
+
+    <div class="main-grid">
+
+        <div class="panel">
+
+            <label>Diameter</label>
+            <input
+                id="diameter"
+                type="number"
+                value="2"
+                step="0.001"
+            >
+
+            <label>Module</label>
+            <input
+                id="module"
+                type="number"
+                value="0.1"
+                step="0.001"
+            >
+
+            <div class="stat-title">Results</div>
+
+            <div id="output" class="stats"></div>
+
+        </div>
+
+        <div class="panel preview">
+
+            <svg
+                id="gearSvg"
+                viewBox="-250 -250 500 500"
+            ></svg>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+function round(num) {
+    return Number(num.toFixed(3));
+}
+
+function even(num) {
+    return Math.round(num / 2) * 2;
+}
+
+function getToothLength(numTeeth, module) {
+
+    if (numTeeth >= 4 && numTeeth <= 5)
+        return even(0.6 * module);
+
+    if (numTeeth >= 6 && numTeeth <= 7)
+        return even(0.7 * module);
+
+    if (numTeeth >= 8 && numTeeth <= 12)
+        return even(0.8 * module);
+
+    if (numTeeth >= 13 && numTeeth <= 22)
+        return even(0.9 * module);
+
+    if (numTeeth >= 23 && numTeeth <= 57)
+        return even(module);
+
+    if (numTeeth >= 58)
+        return even(1.1 * module);
+
+    return 0;
+}
+
+function drawGear(teeth, innerDiameter, outerDiameter) {
+    const svg = document.getElementById("gearSvg");
+
+    const rootRadius = innerDiameter * 30;
+    const tipRadius = outerDiameter * 30;
+
+    const toothPitch = (Math.PI * 2) / teeth;
+
+    const flankRatio = 0.20;
+    const topRatio = 0.30;
+
+    let d = "";
+
+    for (let i = 0; i < teeth; i++) {
+
+        const a0 = i * toothPitch;
+
+        const rootStart = a0;
+        const riseStart = a0 + toothPitch * flankRatio;
+
+        const topStart = riseStart;
+        const topEnd = topStart + toothPitch * topRatio;
+
+        const fallEnd = a0 + toothPitch * (1 - flankRatio);
+
+        const nextRoot = a0 + toothPitch;
+
+        const x1 = rootRadius * Math.cos(rootStart);
+        const y1 = rootRadius * Math.sin(rootStart);
+
+        const x2 = rootRadius * Math.cos(riseStart);
+        const y2 = rootRadius * Math.sin(riseStart);
+
+        const x3 = tipRadius * Math.cos(topStart);
+        const y3 = tipRadius * Math.sin(topStart);
+
+        const x4 = tipRadius * Math.cos(topEnd);
+        const y4 = tipRadius * Math.sin(topEnd);
+
+        const x5 = rootRadius * Math.cos(fallEnd);
+        const y5 = rootRadius * Math.sin(fallEnd);
+
+        const x6 = rootRadius * Math.cos(nextRoot);
+        const y6 = rootRadius * Math.sin(nextRoot);
+
+        if (i === 0) {
+            d += `M ${x1} ${y1} `;
+        }
+
+        d += `
+            A ${rootRadius} ${rootRadius} 0 0 1 ${x2} ${y2}
+            L ${x3} ${y3}
+            A ${tipRadius} ${tipRadius} 0 0 1 ${x4} ${y4}
+            L ${x5} ${y5}
+            A ${rootRadius} ${rootRadius} 0 0 1 ${x6} ${y6}
+        `;
+    }
+
+    d += "Z";
+
+    const boreRadius = Math.max(15, rootRadius * 0.35);
+
+    svg.innerHTML = `
+        <path
+            d="${d}"
+            fill="#4CAF50"
+            stroke="#FFFFFF"
+            stroke-width="2"
+        />
+
+        <circle
+            cx="0"
+            cy="0"
+            r="${boreRadius}"
+            fill="#181818"
+            stroke="#FFFFFF"
+            stroke-width="2"
+        />
+    `;
+}
+
+function calculateGear() {
+
+    const diameter =
+        parseFloat(document.getElementById("diameter").value);
+
+    const module =
+        parseFloat(document.getElementById("module").value);
+
+    if (
+        isNaN(diameter) ||
+        isNaN(module) ||
+        diameter <= 0 ||
+        module <= 0
+    ) {
+
+        document.getElementById("output").textContent =
+            "Enter valid positive values.";
+
+        return;
+    }
+
+    const numTeeth = diameter / module;
+
+    const innerDiameter =
+        diameter - (module * 2.4);
+
+    const circlePiece =
+        innerDiameter *
+        Math.tan((180 / numTeeth) * Math.PI / 180);
+
+    const toothHeight =
+        2.2 * module;
+
+    const toothLength =
+        getToothLength(numTeeth, module);
+
+    const rotationAngle =
+        360 / numTeeth;
+
+    document.getElementById("output").textContent =
+`Number of Teeth: ${round(numTeeth)}
+
+Inner Diameter: ${round(innerDiameter)}
+
+Circle Piece: ${round(circlePiece)}
+
+Tooth Height: ${round(toothHeight)}
+
+Tooth Length: ${round(toothLength)}
+
+Rotation Angle: ${round(rotationAngle)}°`;
+
+    const outerDiameter =
+        diameter + (module * 2);
+
+    drawGear(
+        Math.max(4, Math.round(numTeeth)),
+        innerDiameter,
+        outerDiameter
+    );
+}
+
+document
+.getElementById("diameter")
+.addEventListener("input", calculateGear);
+
+document
+.getElementById("module")
+.addEventListener("input", calculateGear);
+
+calculateGear();
+
+</script>
+
+</body>
+</html>
