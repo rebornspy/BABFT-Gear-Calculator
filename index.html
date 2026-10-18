@@ -148,11 +148,11 @@ function round(num) {
 function even(num) {
     const numStr = num.toString();
     const decimalPos = numStr.indexOf('.');
-=
+
     if (decimalPos === -1) {
         return Math.floor(num / 2 + 0.5) * 2;
     }
-=
+
     const places = numStr.length - decimalPos - 1;
     const scale = Math.pow(10, places);
     const scaled = num * scale;
