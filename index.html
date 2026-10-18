@@ -172,13 +172,31 @@ function getToothLength(numTeeth, module) {
 }
 
 function drawGear(teeth, innerDiameter, outerDiameter) {
+
     const svg = document.getElementById("gearSvg");
 
-    const rootRadius = innerDiameter * 30;
-    const tipRadius = outerDiameter * 30;
+    // Scale gear to reasonably fill preview area
+    const maxScreenRadius = 180;
+
+    const scale =
+        maxScreenRadius /
+        Math.max(outerDiameter, 1);
+
+    const rootRadius = innerDiameter * scale;
+    const tipRadius = outerDiameter * scale;
+
+    // Auto-fit SVG viewport
+    const padding = tipRadius * 0.15;
+    const viewSize = (tipRadius + padding) * 2;
+
+    svg.setAttribute(
+        "viewBox",
+        `${-viewSize / 2} ${-viewSize / 2} ${viewSize} ${viewSize}`
+    );
 
     const toothPitch = (Math.PI * 2) / teeth;
 
+    // Tooth proportions
     const flankRatio = 0.20;
     const topRatio = 0.30;
 
@@ -186,17 +204,22 @@ function drawGear(teeth, innerDiameter, outerDiameter) {
 
     for (let i = 0; i < teeth; i++) {
 
-        const a0 = i * toothPitch;
+        const baseAngle = i * toothPitch;
 
-        const rootStart = a0;
-        const riseStart = a0 + toothPitch * flankRatio;
+        const rootStart = baseAngle;
+        const riseStart =
+            baseAngle + toothPitch * flankRatio;
 
         const topStart = riseStart;
-        const topEnd = topStart + toothPitch * topRatio;
 
-        const fallEnd = a0 + toothPitch * (1 - flankRatio);
+        const topEnd =
+            topStart + toothPitch * topRatio;
 
-        const nextRoot = a0 + toothPitch;
+        const fallEnd =
+            baseAngle + toothPitch * (1 - flankRatio);
+
+        const nextRoot =
+            baseAngle + toothPitch;
 
         const x1 = rootRadius * Math.cos(rootStart);
         const y1 = rootRadius * Math.sin(rootStart);
@@ -231,14 +254,16 @@ function drawGear(teeth, innerDiameter, outerDiameter) {
 
     d += "Z";
 
-    const boreRadius = Math.max(15, rootRadius * 0.35);
+    const boreRadius =
+        Math.max(rootRadius * 0.25, tipRadius * 0.08);
 
     svg.innerHTML = `
         <path
             d="${d}"
             fill="#4CAF50"
             stroke="#FFFFFF"
-            stroke-width="2"
+            stroke-width="${Math.max(0.5, 2 / scale)}"
+            stroke-linejoin="round"
         />
 
         <circle
@@ -247,7 +272,7 @@ function drawGear(teeth, innerDiameter, outerDiameter) {
             r="${boreRadius}"
             fill="#181818"
             stroke="#FFFFFF"
-            stroke-width="2"
+            stroke-width="${Math.max(0.5, 2 / scale)}"
         />
     `;
 }
